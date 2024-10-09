@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARMAGADON - Real Estate</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #062906; /* Hijau lembut */
+            color: #333;
+        }
+
+        /* Navbar Styles */
+        nav {
+            background-color: #062906; /* Hijau gelap */
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav .logo {
+            font-size: 1.8em;
+            color: white;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 20px;
+        }
+
+        nav ul li {
+            display: inline;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2em;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: #ffffff; /* Biru kehijauan terang saat hover */
+        }
+
+        /* Header Section */
+        header {
+            background-image: url('https://i.pinimg.com/564x/e2/80/0a/e2800a7cc16feaaf598db6f66152d609.jpg'); /* URL Gambar */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            color: white;
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        /* Overlay untuk memastikan teks tetap terbaca */
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(6, 41, 6, 0.5); /* Warna gelap dengan transparansi 50% */
+            z-index: 0;
+        }
+
+        header h1 {
+            font-size: 3.5em;
+            color: white;
+            animation: scrollText 10s linear infinite; /* Tambahkan animasi */
+        }
+
+        header p {
+            font-size: 1.5em;
+            color: white;
+            margin-top: 10px;
+            position: relative; /* Untuk memastikan p tetap di atas overlay */
+            z-index: 1; /* Agar p di atas overlay */
+            background: rgba(6, 41, 6, 0.7); /* Latar belakang semi-transparan */
+            padding: 10px; /* Menambahkan padding agar teks tidak terlalu dekat dengan batas */
+            border-radius: 5px; /* Menambahkan border-radius agar sudut lebih halus */
+        }
+
+        /* Animasi untuk teks */
+        @keyframes scrollText {
+            0% {
+                transform: translateX(100%); /* Mulai dari kanan */
+            }
+            100% {
+                transform: translateX(-100%); /* Bergerak ke kiri */
+            }
+        }
+
+        /* About Us Section */
+        section#about {
+            background-color: #ffffff; /* Warna krem */
+            padding: 50px 20px;
+            text-align: center;
+        }
+
+        section#about h2 {
+            color: #062906; /* Hijau gelap */
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        section#about p {
+            font-size: 1.2em;
+            color: #4d4d4d;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* Section about-columns */
+        .about-columns {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 50px;
+            gap: 20px;
+        }
+
+        .left-column {
+            flex: 1;
+            padding: 20px;
+            background-color: #062906; /* Background matching about section */
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px white (104, 103, 103);
+        }
+
+        .right-column {
+            flex: 1;
+            text-align: center;
+        }
+
+        .right-column img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive Design for Columns */
+        @media (max-width: 768px) {
+            .about-columns {
+                flex-direction: column;
+            }
+
+            .left-column, .right-column {
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Property Section */
+        section#properties {
+            padding: 50px 20px;
+            background-color: #ffffff21; /* Biru kehijauan */
+            text-align: center;
+        }
+
+        section#properties h2 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        .property-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .property-box {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            width: 280px;
+            margin: 20px 0;
+        }
+
+        .property-box img {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .property-box h3 {
+            font-size: 1.8em;
+            color: #062906;
+        }
+
+        .property-box p {
+            font-size: 1.1em;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* Contact Section */
+        section#contact {
+            background-color: #ffffff; /* Warna krem */
+            padding: 50px 20px;
+            text-align: center;
+        }
+
+        section#contact h2 {
+            color: #062906;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .contact-info {
+            font-size: 1.3em;
+            color: #4d4d4d;
+        }
+
+        .contact-info span {
+            color: #062906;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #795548; /* Coklat */
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer p {
+            font-size: 0.9em;
+            margin: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .property-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav>
+        <div class="logo">ARMAGADON</div>
+        <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#properties">Properties</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Header Section -->
+    <header id="home">
+        <h1>ARMAGADON Real Estate</h1>
+        <p>Transforming Spaces for a Sustainable Future</p>
+    </header>
+
+    <!-- About Us Section -->
+    <section id="about">
+        <h2>About ARMAGADON</h2>
+        <p>ARMAGADON is a leading real estate company focused on clean energy and sustainable development, with a strong emphasis on green initiatives. We offer premium apartments, shopping centers, residential housing, and land development projects that adhere to the highest standards of quality and innovation. At ARMAGADON, we integrate eco-friendly technologies and green concepts into every project, creating modern living spaces that coexist harmoniously with nature. Our team of dedicated experts ensures that each development contributes to a greener environment and a cleaner, more sustainable future.</p>
+
+        <!-- New Section: Left and Right Column -->
+        <div class="about-columns">
+            <!-- Left Column -->
+            <div class="left-column">
+                <h3>Our Mission</h3>
+                <p>We strive to build spaces that not only elevate the way people live but also contribute to a greener, more sustainable future. Our vision includes creating communities that foster a harmonious relationship between humans and the environment.</p>
+                <p>ARMAGADON believes in transparency, integrity, and excellence, which is reflected in all of our projects.</p>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="right-column">
+                <img src="https://i.pinimg.com/564x/79/b5/bb/79b5bb2e2d403b54bb6214525471c267.jpg" alt="About Us">
+            </div>
+        </div>
+    </section>
+
+    <!-- Properties Section -->
+    <section id="properties">
+        <h2>Our Properties</h2>
+        <div class="property-container">
+            <div class="property-box">
+                <img src="https://i.pinimg.com/564x/f3/c6/78/f3c678ed813df0014087a914c3c9c779.jpg" alt="Apartment">
+                <h3>Luxury Apartments</h3>
+                <p>Modern and stylish apartments located in prime areas, designed for comfort and convenience.</p>
+            </div>
+            <div class="property-box">
+                <img src="https://i.pinimg.com/564x/73/90/44/7390446f13adfa5c5fd7e43bfef21f75.jpg" alt="Shopping Center">
+                <h3>Shopping Centers</h3>
+                <p>State-of-the-art commercial spaces to meet the needs of retailers and consumers alike.</p>
+            </div>
+            <div class="property-box">
+                <img src="https://i.pinimg.com/564x/27/fb/89/27fb8910722f03537fc0920d720803e0.jpg" alt="Housing">
+                <h3>Residential Housing</h3>
+                <p>Beautifully designed homes in peaceful neighborhoods, perfect for families.</p>
+            </div>
+            <div class="property-box">
+                <img src="https://i.pinimg.com/564x/cd/bd/f8/cdbdf8e880c1bb6f1dc8b61349ba09a3.jpg" alt="Land">
+                <h3>Land Development</h3>
+                <p>Prime land ready for development, offering endless possibilities for investors and businesses.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <h2>Contact Us</h2>
+        <p class="contact-info">For inquiries, please email us at <span>info@armagadonrealestate.com</span> or call <span>+1 234 567 8901</span>.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 ARMAGADON Real Estate. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
