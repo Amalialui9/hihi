@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #upload-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #file-content {
+            margin-top: 20px;
+            text-align: left;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="upload-container">
+        <h1>File Viewer</h1>
+        <input type="file" id="file-input" accept=".pdf, .docx, .txt, .csv, .xlsx, .json, image/*">
+        <button onclick="displayFileContent()">Upload & Show Content</button>
+    </div>
+
+    <div id="file-content"></div>
+
+    <!-- Papa Parse for CSV Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <!-- SheetJS for XLSX Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <!-- PDF.js for PDF Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.min.js"></script>
+
+    <script>
+        function displayFileContent() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const fileContentDiv = document.getElementById('file-content');
+
+            if (!file) {
+                alert('Please upload a file.');
+                return;
+            }
+
+            const fileName = file.name;
+            const fileExt = fileName.split('.').pop().toLowerCase();
+
+            // Clear previous content
+            fileContentDiv.innerHTML = '';
+
+            const reader = new FileReader();
+
+            if (fileExt === 'csv') {
+                reader.onload = function(e) {
+                    Papa.parse(e.target.result, {
+                        complete: function(results) {
+                            const data = results.data;
+                            displayTable(data);
+                        }
+                    });
+                };
+                reader.readAsText(file);
+
+            } else if (fileExt === 'xlsx') {
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    displayTable(jsonData);
+                };
+                reader.readAsArrayBuffer(file);
+
+            } else if (fileExt === 'json') {
+                reader.onload = function(e) {
+                    const jsonData = JSON.parse(e.target.result);
+                    const keys = Object.keys(jsonData[0]);
+                    const tableData = [keys];
+                    jsonData.forEach(obj => tableData.push(keys.map(key => obj[key])));
+                    displayTable(tableData);
+                };
+                reader.readAsText(file);
+
+            } else if (fileExt === 'pdf') {
+                reader.onload = function(e) {
+                    const typedArray = new Uint8Array(e.target.result);
+                    const loadingTask = pdfjsLib.getDocument(typedArray);
+                    loadingTask.promise.then(function(pdf) {
+                        let totalText = '';
+                        const totalPages = pdf.numPages;
+                        for (let i = 1; i <= totalPages; i++) {
+                            pdf.getPage(i).then(function(page) {
+                                page.getTextContent().then(function(textContent) {
+                                    const pageText = textContent.items.map(item => item.str).join(' ');
+                                    totalText += pageText + '\n';
+                                    fileContentDiv.textContent = totalText;
+                                });
+                            });
+                        }
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+
+            } else if (fileExt === 'txt' || fileExt === 'docx') {
+                reader.onload = function(e) {
+                    fileContentDiv.textContent = e.target.result;
+                };
+                reader.readAsText(file);
+
+            } else if (file.type.includes('image')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.maxWidth = '100%';
+                fileContentDiv.appendChild(img);
+
+            } else {
+                fileContentDiv.textContent = 'Unsupported file type. Please upload a supported file format.';
+            }
+        }
+
+        function displayTable(data) {
+            const fileContentDiv = document.getElementById('file-content');
+            const table = document.createElement('table');
+            data.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement(rowIndex === 0 ? 'th' : 'td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+            fileContentDiv.appendChild(table);
+        }
+    </script>
+
+</body>
+</html>
