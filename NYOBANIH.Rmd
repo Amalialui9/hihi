@@ -1,0 +1,268 @@
+---
+title: "NYOBANIH"
+author: "Amalia Bakti Pertiwi"
+date: "2025-04-15"
+output: html_document
+---
+
+```{r}
+setwd("~/utsspasial")
+```
+```{r}
+library(tmap)
+library(sf)  # penting buat handle objek 'sf'
+```
+
+```{r}
+# Input shapefile sebagai sf object
+spindonesia <- st_read("gadm41_IDN_1.shp")
+
+# Cek kolom yang tersedia
+names(spindonesia)
+
+# Tampilkan peta Indonesia
+tm_shape(spindonesia) + tm_polygons()
+
+
+```
+```{r}
+library(raster)
+library(spdep)
+library(spatialreg)
+
+```
+# matrix pembobot queen
+```{r}
+# Konversi objek sf ke SpatialPolygonsDataFrame
+spindonesia_sp <- as(spindonesia, "Spatial")
+# Buat queen contiguity dengan toleransi snap
+queen.nb <- poly2nb(spindonesia_sp, snap = 1e-6)
+
+# Buat listw dan izinkan poligon tanpa tetangga
+queen.listw <- nb2listw(queen.nb, zero.policy = TRUE)
+
+# Simpan hasil ke variabel
+queen.Provinsi <- queen.listw
+
+
+```
+```{r}
+# Buat rook contiguity (tetangga yang berbagi sisi)
+rook.nb <- poly2nb(spindonesia_sp, queen = FALSE)
+
+# Buat objek listw dari rook neighbors
+rook.listw <- nb2listw(rook.nb, zero.policy = TRUE)
+
+# Simpan ke variabel
+rook.Provinsi <- rook.listw
+
+```
+```{r}
+
+# Queen
+bobot.queen <- listw2mat(queen.listw)
+write.csv(bobot.queen, file = "Matriks_Bobot_Queen_Provinsi.csv", row.names = FALSE)
+
+# Rook
+bobot.rook <- listw2mat(rook.listw)
+write.csv(bobot.rook, file = "Matriks_Bobot_Rook_Provinsi.csv", row.names = FALSE)
+```
+
+```{r}
+library(readxl)
+```
+```{r}
+data<- read.csv("~/utsspasial/dataspasialbenenr.csv", header=TRUE)
+head(data, 5)
+```
+```{r}
+# Tambah kolom variabel ke shapefile
+spindonesia$Y <- data$AHH
+spindonesia$X1 <- data$sanitasilayak
+spindonesia$X2 <- data$faskes
+spindonesia$X3 <- data$RLS
+spindonesia$X4 <- data$IPM  #
+
+# Visualisasi tiap variabel pakai tmap
+library(tmap)
+
+tm_shape(spindonesia) + tm_polygons(col = "Y", title = "AHH")
+tm_shape(spindonesia) + tm_polygons(col = "X1", title = "Sanitasi Layak")
+tm_shape(spindonesia) + tm_polygons(col = "X2", title = "RS/Puskesmas")
+tm_shape(spindonesia) + tm_polygons(col = "X3", title = "RLS")
+tm_shape(spindonesia) + tm_polygons(col = "X4", title = "X4")
+
+
+```
+```{r}
+# --------------------------------------------
+# Uji Moran I (Global Moran Test)
+# --------------------------------------------
+
+# Pastikan sudah ada library ini
+library(spdep)
+
+# Gunakan pembobot Queen yang sudah dibuat sebelumnya
+moran.test(spindonesia$Y, queen.listw, randomisation = FALSE)
+
+# Plot Moran Scatterplot
+moran.plot(spindonesia$Y, queen.listw)
+
+# --------------------------------------------
+# Model Regresi Linear
+# --------------------------------------------
+
+# Model regresi dengan variabel Y dan X1–X3
+model1 <- lm(Y ~ X1 + X2 + X3 + X4, data = spindonesia)
+
+# --------------------------------------------
+# Uji Lagrange Multiplier (untuk deteksi spasial error/lags)
+# --------------------------------------------
+
+# LM Test berdasarkan model OLS dan matriks bobot Queen
+LM <- lm.LMtests(model1, queen.listw, test = "all")
+
+# Tampilkan ringkasan hasil
+summary(LM)  # ini sebenarnya nggak perlu, karena LM udah bentuk list
+
+```
+
+```{r}
+#RSlag dan adjRSlag signifikan → Ada spatial lag dependence → artinya nilai variabel dependen (Y) di suatu provinsi dipengaruhi oleh nilai Y di provinsi tetangga.
+
+#RSerr dan adjRSerr tidak signifikan → Tidak ada bukti kuat adanya spatial error.
+
+#SARMA hampir signifikan → Tapi karena lag lebih dominan, kita fokus ke sana.
+
+
+
+```
+```{r}
+# Buat vektor logika untuk menyimpan siapa yang mau disimpan (TRUE)
+keep_index <- !(1:length(queen.nb) %in% no_neighbors)
+
+# Subset nb dan listw pakai vektor logika
+queen.nb.clean <- subset(queen.nb, subset = keep_index)
+queen.listw.clean <- nb2listw(queen.nb.clean, zero.policy = TRUE)
+
+# JANGAN LUPA: subset juga data spasialnya
+spindonesia_clean <- spindonesia[keep_index, ]
+
+
+```
+```{r}
+model_sar <- lagsarlm(Y ~ X1 + X2 + X3 + X4, data = spindonesia_clean, listw = queen.listw.clean)
+summary(model_sar)
+
+```
+
+```{r}
+summary(spindonesia$Y)
+any(is.na(spindonesia$Y))  # TRUE berarti ada NA
+
+```
+```{r}
+#Hasil dari Model Spatial Lag (SAR):
+#1. Koefisien Model:
+#(Intercept): 7.52 (p-value = 0.591) → tidak signifikan, berarti intercept model tidak berpengaruh signifikan terhadap Y.
+
+#X1: -0.069 (p-value = 0.550) → tidak signifikan, jadi X1 (sanitasi layak) tidak berpengaruh signifikan terhadap Y.
+
+#: 0.0019 (p-value = 0.049) → signifikan, artinya X2 (Rumah Sakit/Puskesmas) berpengaruh signifikan terhadap Y. Setiap unit kenaikan pada X2, akan meningkatkan Y.
+
+#X3: -0.362 (p-value = 0.155) → tidak signifikan, jadi X3 (RLS) tidak punya pengaruh signifikan terhadap Y.
+
+#X4: 0.745 (p-value < 0.0001) → signifikan, berarti X4 (variabel yang sama dengan X4 sebelumnya) berpengaruh signifikan terhadap Y. Setiap unit kenaikan pada X4, akan meningkatkan Y.
+
+#2. Koefisien Spatial Lag (Rho):
+#Rho = 0.145 → Ini menunjukkan pengaruh lag spasial atau pengaruh antar provinsi. Nilai positif ini menunjukkan ada efek pengaruh positif antar provinsi dalam mempengaruhi variabel Y. Tapi, karena p-value untuk Rho = 0.30162, tidak signifikan pada level 5%. Artinya, efek spasial antar provinsi belum kuat.
+
+#3. Uji Likelihood Ratio (LR) untuk Rho:
+#LR test value = 1.067 (p-value = 0.30162) → tidak signifikan, menunjukkan bahwa pengaruh lag spasial mungkin tidak terlalu penting, jadi model non-spasial (OLS) mungkin tidak terlalu berbeda.
+
+#4. AIC:
+#3AIC untuk model SAR: 125.62, sementara AIC untuk model OLS: 124.69.
+
+#3Karena AIC model SAR lebih tinggi daripada OLS, model OLS mungkin lebih baik dalam hal kualitas model jika hanya memperhatikan AIC.
+
+#5. Uji Autokorelasi Residual:
+#Uji LM untuk residual autokorelasi: p-value = 0.88091 → tidak signifikan, artinya tidak ada masalah autokorelasi residual dalam model ini, sehingga hasil model bisa dianggap valid.
+
+#Kesimpulan:
+#Pengaruh spasial (lag) ada, namun tidak signifikan secara statistik pada tingkat 5%, meskipun ada indikasi bahwa pengaruh antar provinsi memang ada.
+
+#X2 (Rumah Sakit/Puskesmas) dan X4 (variabel tambahan) menunjukkan pengaruh signifikan terhadap Y.
+
+#Model SAR tidak lebih baik dari model OLS dalam hal AIC, jadi sepertinya model OLS masih memberikan hasil yang lebih optimal.
+```
+
+```{r}
+# Pastikan spatialreg sudah di-load
+library(spatialreg)
+
+# Bangun model SEM (Spatial Error Model)
+model_sem <- errorsarlm(Y ~ X1 + X2 + X3 + X4, data = spindonesia_clean, listw = queen.listw.clean)
+
+# Lihat ringkasan hasil
+summary(model_sem)
+
+```
+```{r}
+#Hasil dari Model Spatial Error (SEM):
+#1. Koefisien Model:
+#(Intercept): 19.61 (p-value = 0.071) → marginally signifikan, artinya intercept menunjukkan pengaruh yang hampir signifikan terhadap Y, tapi masih di atas batas 0.05.
+
+#X1: -0.031 (p-value = 0.791) → tidak signifikan, berarti X1 (sanitasi layak) tidak berpengaruh signifikan terhadap Y.
+
+#X2: 0.0021 (p-value = 0.025) → signifikan, artinya X2 (Rumah Sakit/Puskesmas) berpengaruh signifikan terhadap Y. Setiap unit kenaikan pada X2, akan meningkatkan Y.
+
+#X3: -0.352 (p-value = 0.176) → tidak signifikan, jadi X3 (RLS) tidak punya pengaruh signifikan terhadap Y.
+
+#X4: 0.710 (p-value < 0.0001) → signifikan, berarti X4 (variabel yang sama sebelumnya) berpengaruh signifikan terhadap Y.
+
+#2. Koefisien Spatial Error (Lambda):
+#Lambda = 0.1386 → Menunjukkan ada pengaruh autokorelasi spasial pada residual. Nilai positif berarti ada pengaruh spasial, tapi karena p-value untuk Lambda = 0.4184, ini tidak signifikan pada level 5%. Artinya, autokorelasi spasial pada error tidak cukup kuat untuk mempengaruhi model secara signifikan.
+
+#3. Uji Likelihood Ratio (LR) untuk Lambda:
+#LR test value = 0.38634 (p-value = 0.53423) → tidak signifikan, menunjukkan bahwa pengaruh spasial pada error tidak signifikan, dan mungkin model non-spasial (OLS) tetap cukup baik.
+
+#4. AIC:
+AIC untuk model SEM = 126.3, sedangkan AIC untuk model OLS = 124.69.
+
+#Seperti model SAR sebelumnya, AIC SEM lebih tinggi daripada model OLS, yang menunjukkan bahwa model OLS masih lebih baik dalam hal kualitas model berdasarkan AIC.
+
+#5. Log-Likelihood:
+#Log-likelihood untuk model SEM adalah -56.15057, yang juga menunjukkan nilai yang lebih rendah dibandingkan model OLS.
+
+#Kesimpulan:
+#Model SEM tidak menunjukkan adanya autokorelasi spasial yang signifikan dalam residual (Lambda tidak signifikan).
+
+#X2 (Rumah Sakit/Puskesmas) dan X4 (variabel yang sama sebelumnya) berpengaruh signifikan terhadap Y.
+
+#Model SEM ternyata lebih buruk dibandingkan model OLS (AIC lebih tinggi dan Log-Likelihood lebih rendah).
+```
+```{r}
+#1. Model OLS:
+#AIC: 124.69
+
+#Log-Likelihood: Tidak diberikan secara eksplisit, tapi dari AIC-nya, model OLS terlihat lebih baik dalam hal kualitas model dibandingkan dengan SAR dan SEM.
+
+#Signifikansi: Tidak ada pengaruh spasial yang diatur, jadi hasilnya lebih sederhana dan hanya bergantung pada variabel independen.
+
+#2. Spatial Lag Model (SAR):
+#AIC: 125.62
+
+#Log-Likelihood: Tidak diberikan, tapi lebih tinggi dari OLS, yang menunjukkan model SAR kurang baik dibandingkan OLS dalam hal kesesuaian model.
+
+#Signifikansi: Pengaruh lag spasial (Rho) ada, namun tidak signifikan. Ini menunjukkan adanya pengaruh spasial, tetapi tidak cukup kuat untuk mempengaruhi model secara signifikan.
+
+#3. Spatial Error Model (SEM):
+#AIC: 126.3
+
+#Log-Likelihood: -56.15057, lebih buruk daripada model OLS dan SAR.
+
+#Signifikansi: Pengaruh spasial pada error (Lambda) ada, tetapi tidak signifikan. Artinya, ada efek spasial yang sangat lemah pada error term, yang berarti model SEM tidak membawa banyak keuntungan dibandingkan model lainnya.
+
+
+```
+
