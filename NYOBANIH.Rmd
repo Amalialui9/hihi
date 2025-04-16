@@ -266,3 +266,23 @@ AIC untuk model SEM = 126.3, sedangkan AIC untuk model OLS = 124.69.
 
 ```
 
+```{r}
+# Hitung mean dan varians dari data target (misal Y)
+mean_Y <- mean(spindonesia_clean$Y, na.rm = TRUE)
+var_Y <- var(spindonesia_clean$Y, na.rm = TRUE)
+
+# Bandingkan mean dan varians
+mean_Y
+var_Y
+
+```
+```{r}
+# Contoh model Poisson
+model_poisson <- glm(Y ~ X1 + X2 + X3 + X4, family = poisson(), data = spindonesia_clean)
+
+# Cek apakah ada overdispersion dengan membandingkan deviance dan degrees of freedom
+dispersion_stat <- sum(residuals(model_poisson, type = "pearson")^2) / model_poisson$df.residual
+
+dispersion_stat
+```
+
