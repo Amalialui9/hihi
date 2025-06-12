@@ -1,0 +1,107 @@
+---
+title: "nyobas"
+author: "Amalia Bakti Pertiwi"
+date: "2025-06-12"
+output: html_document
+---
+
+```{r}
+# Regresi Linear
+n=1000
+e=rnorm(n,0,5)    # Distribusi normal mean=0, var=5
+x=runif(n,0,10)   # Distribusi uniform (0,10)
+y=2+6*x+e         # Model data simulasi
+
+# Estimasi Parameter
+X=cbind(1, x)    # Menambahkan kolom intercept
+b=solve(t(X)%*%X)%*%t(X)%*%y   # Estimator parameter model
+
+# Evaluasi Model
+y_hat=X%*%b   # nilai dugaan
+SST=sum((y - mean(y))^2)     # Total sum of squares
+
+# Statistik Lanjutan
+SSR=sum((y_hat - mean(y))^2)   # Sum of Squares for Regression
+SSE=sum((y - y_hat)^2)         # Sum of Squares for Error
+MSR=SSR/1   # Mean Square for Regression (degrees of freedom = 1)
+MSE=SSE/(n-2)   # Mean Square for Error (degrees of freedom = n - 2)
+R2=SSR/SST    # R-squared
+
+cov_b=solve(t(X)%*%X)*MSE
+se_b=sqrt(diag(cov_b))
+t_hit=b/se_b   # t-hitung
+p_val=2*(1-pt(abs(t_hit),n-2))   # p-value
+res=y - y_hat    # Residuals
+
+hasil=cbind(b,se_b,t_hit,p_val)
+dimnames(hasil)<-list(c("Intercept","b1"),c("coeff","se","t_hit","p-value"))
+hasil
+
+# Kurva Regresi
+s_y_hat=sqrt(MSE*diag(X%*%solve(t(X)%*%X)%*%t(X)))
+t_tab=abs(qt(0.025, n-2))
+ba_y_hat=y_hat-t_tab*s_y_hat
+bb_y_hat=y_hat+t_tab*s_y_hat
+garis=c("Kurva regresi","Batas Interval")
+
+# Plotting Kurva Regresi
+windows()
+plot(x, y, xlab="x", ylab="y", main="Kurva Regresi Linier")
+lines(x[order(x)], y_hat[order(x)])
+lines(x[order(x)], ba_y_hat[order(x)], col="red", lty=2)
+lines(x[order(x)], bb_y_hat[order(x)], col="red", lty=2)
+legend(min(x), max(x), garis, lty=c(1,2), col=c(1,2))
+
+# Pemeriksaan Residual
+windows()
+par(mfrow=c(2,2))
+hist(res)
+qqnorm(res)
+plot(res, y_hat)
+plot.ts(res)
+
+# Output hasil estimasi dan statistik lainnya
+output=list("Hasil Estimasi", hasil, R2=R2, MSE=MSE)
+output
+
+```
+```{r}
+set.seed(123)
+n <- 30
+lambda <- 1/25  # parameter rate untuk distribusi eksponensial
+sampel <- rexp(n, rate=lambda)
+rata_rata_sampel <- mean(sampel)
+nboots <- 10000
+boot.result <- replicate(nboots, mean(sample(sampel, replace=TRUE)))
+rata_rata_bootstrap <- mean(boot.result)
+interval <- quantile(boot.result, c(0.025, 0.975))
+cat("Rata-rata sampel acak:", rata_rata_sampel, "\n")
+cat("Rata-rata bootstrap:", rata_rata_bootstrap, "\n")
+cat("Interval kepercayaan 95% untuk rata-rata:", interval, "\n")
+
+```
+```{r}
+set.seed(123)
+n <- 30
+lambda <- 1/25  
+sampel <- rexp(n, rate=lambda)
+rata_rata_sampel <- mean(sampel)
+sd_sampel <- sd(sampel)
+nboots <- 10000
+boot.result <- replicate(nboots, mean(sample(sampel, replace=TRUE)))
+rata_rata_bootstrap <- mean(boot.result)
+sd_bootstrap <- sd(boot.result)
+t_stat <- (rata_rata_sampel - 25) / (sd_sampel / sqrt(n))
+alpha <- 0.05
+t_critical <- qt(1 - alpha/2, df=n-1)  # Nilai t kritis untuk 95% CI
+lower_bound <- rata_rata_sampel - t_critical * (sd_sampel / sqrt(n))
+upper_bound <- rata_rata_sampel + t_critical * (sd_sampel / sqrt(n))
+cat("Rata-rata sampel acak:", rata_rata_sampel, "\n")
+cat("Standar deviasi sampel acak:", sd_sampel, "\n")
+cat("Rata-rata resample bootstrap:", rata_rata_bootstrap, "\n")
+cat("Standar deviasi resample bootstrap:", sd_bootstrap, "\n")
+cat("Nilai T resample bootstrap:", t_stat, "\n")
+cat("Interval kepercayaan rata-rata (95%): [", lower_bound, ", ", upper_bound, "]\n")
+
+```
+
