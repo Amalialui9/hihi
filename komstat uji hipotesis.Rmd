@@ -1,0 +1,190 @@
+---
+title: "praktikum komsatat uji hipotesis"
+author: "Amalia Bakti Pertiwi"
+date: "2025-06-04"
+output: html_document
+---
+
+```{r}
+library(BSDA)
+```
+
+#Uji z, 1 populasi jika jumlah n > 30
+H0 : miu <= miu 0
+H1: miu > miu 0
+
+raight tail
+```{r}
+zsum.test(mean.x = 1200000, sigma.x = 600000, n.x = 16,
+          alternative = "greater", mu = 0,
+          conf.level = 0.95) #H0:<=, H1:> (greater)
+
+
+```
+hasil dari uji z satu populasi pvalue < alfa, dan uji ststistik z > z table maka diputuskan untuk tolak H0. Artinya miu lebih besar dari 0. 
+
+```{r}
+xbar = 1200000
+miu = 0
+n = 16
+s = 600000
+z = (xbar - miu)/(s/sqrt(n))
+z
+#ini untuk perhitungan z statistik mengugunakan rumus manual dan dihasilkan z statistiknya 8 sama denngan z yang dihitung menggunakan zsum.test\
+
+```
+left tail
+```{r}
+pvalue = pnorm(z, lower.tail = FALSE)
+pvalue
+```
+```{r}
+pvalue2 = 1-pnorm(z)
+pvalue2
+```
+
+```{r}
+pvalue3 = 2*pvalue 
+pvalue3
+```
+left tell
+H0: miu >= miy 0
+H1: miu < miu 0
+```{r}
+zsum.test(mean.x = 1200000, sigma.x = 600000, n.x = 16,
+          alternative = "less", mu = 0,
+          conf.level = 0.95) 
+```
+
+#caatatan jika pada uji hipotetis tasting diketahui sigma/s dan n kurang dari 30 aka bisa mneggunakan uji z 
+
+
+#Uji T 1 populasi jika jumlah sample n < 30
+H0: miu = miu0
+H1: miu +/ miu0
+```{r}
+tsum.test(mean.x = 25, s.x = 6.4, n.x = 20,
+          alternative = "two.sided", mu = 0,
+          var.equal = TRUE, conf.level = 0.95)
+```
+dari hasil analisis let tail menggunakan zsum diaptkan hasil pvalue sebar 1. Dimana 1 adalah mutlak
+```{r}
+IR64 = c(4,5,4,8,4,3,6,3,8,5,4,3,9,4,8)
+MSP = c(6,4,6,5,4,2,4,5,8,5,9,6,2,3,8,2,5,3,6,7,8)
+t.test(MSP, alternative = "two.sided")
+tsum.test(mean.x = mean(MSP), s.x = sd(MSP), n.x = length(MSP),
+          alternative = "two.sided", mu = 0,
+          var.equal = TRUE, conf.level = 0.95)
+```
+hasil t test dan tsum hasilnya memiliki hasil sama yaitu sama sama menolak H0
+```{r}
+t.test(IR64, alternative = "two.sided")
+tsum.test(mean.x = mean(IR64), s.x = sd(IR64), n.x = length(IR64),
+          alternative = "two.sided", mu = 0,
+          var.equal = TRUE, conf.level = 0.95)
+```
+hasil t test dan tsum hasilnya memiliki hasil sama yaitu sama sama menolak H0. 
+
+#Uji 2 populasi independet\ takberpasangan
+H0: miu1=miu2 = 0
+H1; miu1-miu2 +/ 0
+```{r}
+IR64 = c(4,5,4,8,4,3,6,3,8,5,4,3,9,4,8)
+MSP = c(6,4,6,5,4,2,4,5,8,5,9,6,2,3,8,2,5,3,6,7,8)
+t.test(x = IR64, y = MSP, alternative = "two.sided",
+          paired = FALSE, var.equal = TRUE, conf.level = 0.95)
+
+```
+hasil dari analisis menggunakan t untuk satu populasi diaman p value > alfa dimna gagal tolak H0. 
+```{r}
+orang.ke = seq(1:10)
+BB.Sebelum = c(57, 69, 56, 67, 55, 56, 62, 67, 67, 56)
+BB.Sesudah = c(55, 70, 56, 65, 54, 55, 64, 65, 67, 54)
+data = data.frame(orang.ke, BB.Sebelum, BB.Sesudah)
+t.test(x = data$BB.Sebelum, y = data$BB.Sesudah, alternative = "greater",
+       mu = 0.5, paired = TRUE, var.equal = TRUE, conf.level = 0.95)
+
+
+```
+Dari hasil analsisi dengan menggunakan statistik ui t didapatkan p value > alfa yang berarti gagal tolak H0. dimana miu 1-miu0 itu sama dengan 0
+```{r}
+#==== Normal Distribution ====
+# Histogram
+#make this example reproducible
+set.seed(0)
+
+#create data that follows a normal distribution
+normal_data <- rnorm(200)
+
+#create data that follows an exponential distribution
+non_normal_data <- rexp(200, rate=3)
+
+#define plotting region
+par(mfrow=c(1,2)) 
+#create histogram for both datasets
+hist(normal_data, col='steelblue', main='Normal')
+hist(non_normal_data, col='steelblue', main='Non-normal')
+
+```
+Disini terdapat 200 data yang berdistribusi normal dan 200 data yang tidak normal yang diambil dari distribusi eksponensial. Dari hasil histogram plot data yang memiliki normal memiliki betuk hampir seperti lonceng distribusi normal. Sedangkan untuk data yang tidak berdistribusi normal memiliki bentuk skewness
+
+```{r}
+#QQ Plot 
+#make this example reproducible
+set.seed(0)
+
+#create data that follows a normal distribution
+normal_data <- rnorm(200)
+
+#create data that follows an exponential distribution
+non_normal_data <- rexp(200, rate=3)
+
+#define plotting region
+par(mfrow=c(1,2)) 
+
+#create Q-Q plot for both datasets
+qqnorm(normal_data, main='Normal')
+qqline(normal_data)
+
+qqnorm(non_normal_data, main='Non-normal')
+qqline(non_normal_data)
+```
+npada qq plot dapat dilihat bahwa data yang normal terletas mendekati garis lurus. Sedangakan data yang tidak normal data tidak terletak mendekati garis lurus. hanya beberapa data sayja yang terlatk endekati garis. hal ini menunjnjukan data tidak berdistribusi normal
+```{r}
+#Shapiro Wilk
+#make this example reproducible
+set.seed(0)
+
+#create data that follows a normal distribution
+normal_data <- rnorm(200)
+
+#perform shapiro-wilk test
+shapiro.test(normal_data)
+
+#create data that follows an exponential distribution
+non_normal_data <- rexp(200, rate=3)
+
+#perform shapiro-wilk test
+shapiro.test(non_normal_data)
+
+```
+Dari hasil uji shapiro wilk pada data normal memiliki nilai satstitik W yang mendekati satu artinya data mendakti distribusi normal. untuk p value lebih kecil dari alfa maka menola H0 dimana data mengikuti distribusi normal. 
+```{r}
+#Kolmogorov Smirnov
+#make this example reproducible
+set.seed(0)
+
+#create data that follows a normal distribution
+normal_data <- rnorm(200)
+
+#perform kolmogorov-smirnov test
+ks.test(normal_data, 'pnorm')
+
+#create data that follows an exponential distribution
+non_normal_data <- rexp(200, rate=3)
+
+#perform kolmogorov-smirnov test
+ks.test(non_normal_data,'pnorm')
+```
+dari hasil tersebut didaptkan pada data normal pvalue 0.3 dimana lebih besar dari alfa yang atrinya tgagal menolak H0 dimana data mengikuti distribusi normal. 
+Pada data tidak normal didapatkan p value yang lebih kecil dari alfa menyatakan menolak H0 dimana data tidak mengikuti distribusi noormal
