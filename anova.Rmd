@@ -1,0 +1,95 @@
+---
+title: "kOMSTAT PRAKTIKUM 13"
+author: "Amalia Bakti Pertiwi"
+date: "2025-05-23"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Soal no 1
+
+```{r}
+#RAL 
+dosis <- factor(rep(c(20, 30, 40), each = 4))
+bioaktivitas <- c(24, 28, 37, 30,
+                  37, 44, 31, 35,
+                  42, 47, 52, 38)
+
+datasoal1 <- data.frame(dosis, bioaktivitas)
+
+# ANOVA
+anovasoal1 <- aov(bioaktivitas ~ dosis, data = datasoal1)
+summary(anovasoal1)
+
+```
+
+# Interpretasi
+
+H0 : ketiga bioktavis obat tidak memiliki perbedaan rata-rata
+
+H1 : Setidaknya ada satu dosis obat yang memiliki rata-rata bioaktivitas yang berbeda
+
+Hail didapatkan p-value 0,0145 \< 0.05 dimana berarti tolak H0. Hal ini menunjukan terdapat perbedaan bioaktivasi yang signifikan antara dosis 20g, 30g, dan 40g
+
+# Soal no 2
+
+```{r}
+olahraga <- factor(rep(c("Lari", "Bersepeda", "Berenang", "Kontrol"), each = 4))
+detak <- c(158, 165, 168, 154,
+           140, 148, 142, 135,
+           126, 132, 129, 136,
+           102, 98, 103, 99)
+
+datasoal2 <- data.frame(olahraga, detak)
+
+anovasoal2 <- aov(detak ~ olahraga, data = datasoal2)
+summary(anovasoal2)
+
+
+```
+
+# interpretasi
+
+H0: tidak ada perbedaan rata-rata detak jantung antar olahraga (lari, bersepeda, berenang, kontrol)
+
+H1: Minimal ada satu perbedaan rata-rata detak jantung antar olahraga (lari, bersepeda, berenang, kontrol)
+
+hasilnya didapatkan p-value 5.5e-09 \< 0.05 yang berarti tolak H0. Ini menunjukkan terdapat perbedaan signifikan dalam rata-rata detak jantung antar olahraga (lari, bersepeda, berenang, kontrol). Jenis olahraga berpengaruh terhadap detak jantung.
+
+# Soal no 3
+
+```{r}
+yield <- c(
+  90.3, 89.2, 98.2, 93.9, 87.4, 97.9,
+  92.5, 89.5, 90.6, 94.7, 87.0, 95.8,
+  85.5, 90.8, 89.6, 86.2, 88.0, 93.4,
+  82.5, 89.5, 85.6, 87.4, 78.9, 90.7
+)
+tekanan <- factor(rep(c("8500", "8700", "8900", "9100"), each = 6))
+batch <- factor(rep(1:6, times = 4))
+datasoal3 <- data.frame(yield, tekanan, batch)
+
+```
+
+```{r}
+
+model1 <- aov(yield ~ tekanan + batch, data = datasoal3)
+summary(model1)
+
+```
+# interpretasi
+
+faktor tekanan ekstruks H0 tidak ada perbedaan rata-rata yield antar tingkatan tekanan ekstruks9
+
+H1: minimal ada satu perbedaan rata-rata yield antar tingkat tekanan ekstrusi
+
+didapatkan hasil p-value tekanan 0.00192 \< 0.05 dimana tolak H0. Hal ini menunjukkan terdapat prebedaan rata-rata yield antar tingkat tekanan ekstrusi. Tekanan ekstruksi memiliki pengaruh yang signifikan terhadap yield
+
+faktor blok
+
+H0: Tidak ada perbedaan yoeld antar bacth resin
+
+H1: minimal ada satu perbedaan yield antar bacth resin
+
+didapatkan nilai p-value 0.00553 \< 0.05 dimana tolak H0. hal ini berarti terdapat perbedaan yield yang signifikan antar bacth resin,
