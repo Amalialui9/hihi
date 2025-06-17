@@ -1,0 +1,241 @@
+#ROLE
+create role ‘admin_role';
+grant all privilage on perpustakaan_r_baca_ftmm, * to ‘admin_role’;
+
+#USER
+“create user ‘admin’@’localhost’ identified by ‘passwordS’;
+“create user ‘admin’@’%’ identified by ‘password’; #bisa diakses dimana aja
+
+grant 'admin_role' to ‘admin’@’localhost’;
+grant SELECT, INSERT, UPDATE, DELETE ON pdb_lia.* TO ‘admin’@’localhost’
+SHOW grants for ‘admin’@’localhost’
+
+#Masuk user
+“mysql -u manajer -p" #jika masuk di devce sendiri
+“mysql -u manajer -p -h 10.16.174.152” #jika pakai device lain
+
+#Hapus grant dan user atau role
+REVOKE ALL PRIVILEGES ON pdb_lia FROM 'admin'@'localhost';
+DROP USER 'username'@'host';
+
+#VIEW 
+USE praktikum_m9;
+
+CREATE VIEW customer_paling_berkontribusi AS
+SELECT customers.*
+FROM customers
+WHERE customernumber = (
+    SELECT customernumber 
+    FROM payments 
+    GROUP BY customernumber 
+    ORDER BY COUNT(*) DESC 
+    LIMIT 1
+);
+
+## SELECT * NAMAVIEW
+
+
+#STORAGE PROCEDURE
+CREATE PROCEDURE tambah_stock (
+    IN code_product VARCHAR(15),
+    IN quantity_product INT
+)
+BEGIN
+    UPDATE products
+    SET quantityInStock = quantityInStock + quantity_product
+    WHERE productCode = code_product;
+END //
+
+call tambah_stock(parameter)
+
+#TRIGGER
+
+CREATE TABLE log_pengurangan_stok (
+    logID INT AUTO_INCREMENT PRIMARY KEY,
+    orderNumber INT,
+    productCode VARCHAR(15),
+    quantityOrdered INT,
+    sisaStok SMALLINT,
+    tanggal TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TRIGGER pengurangan_stok_dan_log
+AFTER INSERT ON orderdetails
+FOR EACH ROW
+BEGIN
+    UPDATE products
+    SET quantityInStock = quantityInStock - NEW.quantityOrdered
+    WHERE productCode = NEW.productCode;
+
+    INSERT INTO log_pengurangan_stok (
+        orderNumber,
+        productCode,
+        quantityOrdered,
+        sisaStok
+    )
+    VALUES (
+        NEW.orderNumber,
+        NEW.productCode,
+        NEW.quantityOrdered,
+        (SELECT quantityInStock FROM products WHERE productCode = NEW.productCode)
+    );
+END;
+
+####### menampilkan judul film dan mana group judul film
+SELECT f.title, a.first_name, a.last_name
+FROM actor a
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+JOIN film f ON fa.film_id = f.film_id
+GROUP BY f.title, a.actor_id
+LIMIT 5;
+
+SELECT f.title, GROUP_CONCAT(a.first_name, ' ', a.last_name SEPARATOR ', ') AS actors
+FROM actor a
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+JOIN film f ON fa.film_id = f.film_id
+GROUP BY f.title
+LIMIT 5;
+
+#### Nama dan kategorinya 
+SELECT a.first_name, a.last_name, GROUP_CONCAT(DISTINCT c.name SEPARATOR ', ')
+FROM actor a
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+JOIN film f ON fa.film_id = f.film_id
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id
+GROUP BY a.first_name, a.last_name
+LIMIT 5;
+
+SELECT a.first_name, a.last_name, GROUP_CONCAT(DISTINCT c.name SEPARATOR ', ') AS categories
+FROM actor a
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+JOIN film f ON fa.film_id = f.film_id
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id
+GROUP BY a.first_name, a.last_name
+LIMIT 5;
+
+
+###### 
+b
+SELECT CONCAT(customer.first_name, ' ', customer.last_name) AS customer_name,
+       customer.email, 
+       film.title AS dvd_title, 
+       rental.return_date, 
+       rental.rental_date + INTERVAL film.rental_duration DAY AS due_date
+FROM customer
+JOIN rental ON customer.customer_id = rental.customer_id
+JOIN inventory ON rental.inventory_id = inventory.inventory_id
+JOIN film ON inventory.film_id = film.film_id
+WHERE rental.return_date < (rental.rental_date + INTERVAL film.rental_duration DAY)
+LIMIT 5;
+
+a
+SELECT CONCAT(first_name, ' ', last_name) AS customer_name,
+       email, 
+       title AS dvd_title, 
+       return_date, 
+       rental_date + INTERVAL rental_duration DAY AS due_date
+FROM customer
+JOIN rental USING(customer_id)
+JOIN inventory USING(inventory_id)
+JOIN film USING(film_id)
+WHERE return_date < rental_date + INTERVAL rental_duration DAY
+LIMIT 5;
+
+####
+SELECT c.title, COUNT(DISTINCT a.inventory_id)
+FROM rental a
+JOIN inventory b ON a.inventory_id = b.inventory_id
+JOIN film c ON b.film_id = c.film_id
+WHERE c.title = 'HUNCHBACK IMPOSSIBLE' 
+  AND a.inventory_id NOT IN (SELECT inventory_id FROM rental WHERE return_date IS NULL);
+
+####
+SELECT film.title, COUNT(rental.rental_id) as banyak_rental
+FROM film 
+LEFT JOIN inventory ON film.film_id = inventory.film_id
+LEFT JOIN rental ON inventory.inventory_id = rental.inventory_id
+GROUP BY film.title 
+ORDER BY banyak_rental DESC;
+
+###
+SELECT CONCAT(c.first_name, ' ', c.last_name) AS cust_name, 
+       SUM(p.amount) AS total_payment
+FROM customer c
+JOIN payment p ON c.customer_id = p.customer_id
+GROUP BY c.first_name, c.last_name 
+ORDER BY c.last_name;
+
+### 
+SELECT CONCAT(c.first_name, ' ', c.last_name) as cust_name, 
+       SUM(p.amount) AS total_payment
+FROM customer c
+JOIN payment p ON c.customer_id = p.customer_id
+GROUP BY c.first_name, c.last_name
+ORDER BY c.last_name;
+
+####
+SELECT a.first_name, a.last_name
+FROM actor a 
+WHERE a.actor_id IN (SELECT fa.actor_id 
+                      FROM film_actor fa 
+                      JOIN film f ON fa.film_id = f.film_id 
+                      WHERE f.title = 'Alone Trip');
+
+####
+DELIMITER //
+
+CREATE PROCEDURE AddFilm(
+    IN title VARCHAR(900), 
+    IN description TEXT, 
+    IN release_year YEAR, 
+    IN language_id TINYINT, 
+    IN original_language_id TINYINT, 
+    IN rental_duration INT, 
+    IN rental_rate DECIMAL(4,2), 
+    IN length SMALLINT, 
+    IN replacement_cost DECIMAL(5,2), 
+    IN rating ENUM('G', 'PG', 'PG-13', 'R', 'NC-17'), 
+    IN special_features SET('Trailers', 'Commentaries', 'Deleted Scenes', 'Behind the Scenes')
+)
+BEGIN
+    INSERT INTO film (
+        title, description, release_year, language_id, original_language_id, 
+        rental_duration, rental_rate, length, replacement_cost, rating, special_features
+    ) 
+    VALUES (
+        title, description, release_year, language_id, original_language_id, 
+        rental_duration, rental_rate, length, replacement_cost, rating, special_features
+    );
+END //
+
+DELIMITER ;
+
+########
+DELIMITER $$
+
+CREATE PROCEDURE dela(IN input_actor_id INT)
+BEGIN
+    DELETE FROM film_actor WHERE actor_id = input_actor_id;
+    DELETE FROM actor WHERE actor_id = input_actor_id;
+END$$
+
+DELIMITER ;
+
+################
+DELIMITER ;
+
+CREATE VIEW view AS
+SELECT st.first_name, st.last_name, st.address_id, stor.store_id
+FROM staff st
+JOIN store stor ON stor.store_id = st.store_id;
+
+
+
+
+
+
+
+
